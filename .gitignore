@@ -6,6 +6,12 @@ untitled*
 .pixi
 modflow6
 win64ext*
+~$*
 
 # model data
+*.hds
+*.lst
+*.cbc
+*.grb
 notebooks/4_Numerical_Solution/zaidel
+class-model/

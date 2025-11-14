@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "mf6xtd"
 version = "1.0.0"
 channels = ["conda-forge"]
@@ -66,6 +66,8 @@ xugrid = "*"
 
 # flopy
 pymetis = "*"
+rasterio = "*"
+rasterstats = "*"
 
 [pypi-dependencies]
 flopy = { git = "https://github.com/modflowpy/flopy.git" }
