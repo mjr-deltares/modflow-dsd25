@@ -1,9 +1,14 @@
-import os
 import pathlib as pl
 from typing import List, Tuple, Union
 
 import flopy
 import numpy as np
+
+import matplotlib as mpl
+import matplotlib.transforms as mtransforms
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 import shapely
 from flopy.utils.gridintersect import GridIntersect
 from shapely.geometry import LineString, Polygon
@@ -459,3 +464,112 @@ def get_model_cell_count(
         raise ValueError(f"modelgrid grid type '{modelgrid.grid_type}' not supported")
 
     return ncells, nactive
+
+def plot_intro_model_data(
+        model, 
+        arr, 
+        arr2, 
+        title,
+        title2,
+        layer=0,
+        levels=None,
+        path=None,
+        dpi=300,
+        ):
+    mosaic = [
+        ["a", "a", "a", "c"],
+        ["a", "a", "a", "c"],
+        ["a", "a", "a", "c"],
+        ["b", "b", "b", "."],
+        ]
+
+    column = 25
+    row = 24
+    b_y = model.modelgrid.ycellcenters[row, 0]
+    c_x = model.modelgrid.xcellcenters[0, column]
+    
+    with flopy.plot.styles.USGSMap():
+        fig, axd = plt.subplot_mosaic(
+            mosaic,
+            figsize=(10,8),
+            layout="constrained",
+            )
+        # fig.patch.set_facecolor("white")
+        
+        ax = axd["a"]
+        mv = flopy.plot.PlotMapView(model=model, ax=ax, layer=layer)
+        pa = mv.plot_array(arr)
+        if levels is not None:
+            CS = mv.contour_array(arr, levels=levels, colors="black", linewidths=0.75)
+            ax.clabel(CS, inline=1, fontsize=10)
+        mv.plot_bc(package=model.river, color="blue")
+        ax.axhline(b_y, lw=2.0, color="red", ls=":")
+        ax.axvline(c_x, lw=2.0, color="red", ls=":")
+        ax.set_xticklabels([])
+        ax.set_ylabel("y-position, m")
+
+        axins = inset_axes(
+            ax,
+            width="25%",  # Width of the colorbar (as a percentage of parent axes width)
+            height="2.5%", # Height of the colorbar (as a percentage of parent axes height)
+            loc="lower left", # Location within the parent axes (e.g., 'upper right', 'lower left', 'center right')
+            bbox_to_anchor=(0.04, 0.035, 1, 1), # Fine-tune position relative to parent's bbox
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+            )
+        cbar = plt.colorbar(pa, cax=axins, orientation="horizontal")  
+        cbar.ax.set_title(title, fontdict={"fontsize": 8, "fontweight": "bold"})
+      
+
+        ax = axd["b"]
+        xs = flopy.plot.PlotCrossSection(model=model, ax=ax, line={"row": row})
+        pa = xs.plot_array(arr2)
+        xs.plot_grid(lw=0.5, color="black")
+        ax.axvline(c_x, lw=2.0, color="red", ls=":")
+        ax.set_ylabel("Elevation, m")
+        ax.set_xlabel("x-position, m")
+        axins = inset_axes(
+            ax,
+            width="25%",  # Width of the colorbar (as a percentage of parent axes width)
+            height="7.5%", # Height of the colorbar (as a percentage of parent axes height)
+            loc="lower left", # Location within the parent axes (e.g., 'upper right', 'lower left', 'center right')
+            bbox_to_anchor=(0.04, 0.1, 1, 1), # Fine-tune position relative to parent's bbox
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+            )
+        cbar = plt.colorbar(pa, cax=axins, orientation="horizontal")  
+        cbar.ax.set_title(title2, fontdict={"fontsize": 8, "fontweight": "bold"})
+
+        ax = axd["c"]
+        xs = flopy.plot.PlotCrossSection(
+            model=model, 
+            ax=ax, 
+            geographic_coords=False, 
+            line={"column": column},
+            )
+        pa = xs.plot_array(arr2)
+        pg = xs.plot_grid(lw=0.5, color="black")
+
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        xc, yc = 0.5 * sum(xlim), 0.5 * sum(ylim)
+        rotation_point = np.array([xc, yc])
+        angle_deg = -90
+
+        transform = (
+            mtransforms.Affine2D().translate(*-rotation_point) +  # Translate to origin
+            mtransforms.Affine2D().rotate_deg(angle_deg) +        # Rotate
+            mtransforms.Affine2D().translate(*np.flip(rotation_point))      # Translate back
+        )
+
+        pa.set_transform(transform + ax.transData)
+        pg.set_transform(transform + ax.transData)
+
+        ax.set_xlim(ylim[::-1])
+        ax.set_ylim(xlim)
+        ax.axhline(b_y, lw=2.0, color="red", ls=":")
+        ax.set_yticklabels([])
+        ax.set_xlabel("Elevation, m")
+
+        if path is not None:
+            fig.savefig(path, dpi=dpi, transparent=False)
