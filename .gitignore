@@ -15,3 +15,5 @@ win64ext*
 *.grb
 notebooks/4_Numerical_Solution/zaidel
 class-model/
+.figures/
+.animations/

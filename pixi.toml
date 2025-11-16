@@ -68,6 +68,7 @@ xugrid = "*"
 pymetis = "*"
 rasterio = "*"
 rasterstats = "*"
+ffmpeg = "*"
 
 [pypi-dependencies]
 flopy = { git = "https://github.com/modflowpy/flopy.git" }
