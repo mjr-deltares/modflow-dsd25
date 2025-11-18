@@ -12,8 +12,10 @@ linux = "4.4.0"
 update-dependencies = "pixi update flopy modflow-devtools"
 update-flopy-dfn = { cmd = "python -m flopy.mf6.utils.generate_classes --dfnpath modflow6/doc/mf6io/mf6ivar/dfn" }
 test-installation = { cmd = "python test_installation.py", cwd = "installation" }
+get-flopy4 = { cmd = "pip install git+https://github.com/modflowpy/pyphoenix-project.git@develop" }
 install = { depends-on = [
   "obtain-modflow",
+  "get-flopy4",
   "test-installation",
 ] }
 
@@ -71,8 +73,8 @@ rasterstats = "*"
 ffmpeg = "*"
 
 [pypi-dependencies]
-flopy = { git = "https://github.com/modflowpy/flopy.git" }
 modflow-devtools = { git = "https://github.com/MODFLOW-ORG/modflow-devtools.git", extras = ["dfn"] }
+flopy = { git = "https://github.com/modflowpy/flopy.git" }
 
 [target.unix.dependencies]
 # build dependencies
